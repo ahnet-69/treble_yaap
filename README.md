@@ -1,6 +1,6 @@
-![alt text][logo]
-
-[logo]:https://avatars.githubusercontent.com/u/70501337?s=200&v=4 "Yet Another AOSP Project"
+<p align="center">
+  <img src="https://avatars.githubusercontent.com/u/70501337?s=200&v=4">
+</p>
 
 ### To get started with building YAAP GSI,
 You'll need to get familiar with [Git and Repo](https://source.android.com/source/using-repo.html) as well as [How to build a GSI](https://github.com/phhusson/treble_experimentations/wiki/How-to-build-a-GSI%3F).
