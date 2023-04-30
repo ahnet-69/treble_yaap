@@ -20,11 +20,70 @@ To do that, run these commands:
 ```
 
 ### Clone the Manifest to add necessary dependencies for gsi
-    git clone https://github.com/captaincookie200/treble_manifest.git
+```bash
+   git clone https://github.com/captaincookie200/treble_manifest.git
+```
 
 ### Afterwards, sync the source by running this command:
 ```bash
    repo sync -j$(nproc --all) --no-tags --no-clone-bundle --current-branch
 ```
 
+### After syncing, apply the patches:
+Copy the patches folder to rom folder and in rom folder
+```bash
+   patches/apply-patches.sh .
+```
 
+## Adapting for YAAP
+In rom folder,
+
+```bash
+   cd device/phh/treble
+   bash generate.sh vendor/yaap/config/common_full_phone.mk
+```
+
+### Turn on caching to speed up build
+You can speed up subsequent builds by adding these lines to your ~/.bashrc OR ~/.zshrc file:
+
+```bash
+export USE_CCACHE=1
+export CCACHE_COMPRESS=1
+export CCACHE_MAXSIZE=50G # 50 GB
+```
+
+## Compilation 
+In rom folder,
+
+```bash
+ . build/envsetup.sh
+ ccache -M 50G -F 0
+ lunch treble_arm64_bgN-userdebug 
+ make systemimage -j$(nproc --all)
+```
+
+## Compress
+After compilation,
+If you want to compress the build.
+In rom folder,
+
+```bash
+   cd out/target/product/tdgsi_arm64_ab
+   xz -z -k system.img 
+```
+
+## Troubleshoot
+If you face any conflicts while applying patches, apply the patch manually.
+
+
+## Credits
+These people have helped this project in some way or another, so they should be the ones who receive all the credit:
+- [YAAP Team](https://github.com/yaap)
+- [Phhusson](https://github.com/phhusson)
+- [AndyYan](https://github.com/AndyCGYan)
+- [Ponces](https://github.com/ponces)
+- [Peter Cai](https://github.com/PeterCxy)
+- [Iceows](https://github.com/Iceows)
+- [ChonDoit](https://github.com/ChonDoit)
+- [Nazim](https://github.com/naz664)
+- [UniversalX](https://github.com/orgs/UniversalX-devs/)
