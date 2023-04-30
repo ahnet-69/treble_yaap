@@ -21,7 +21,7 @@ To do that, run these commands:
 
 ### Clone the Manifest to add necessary dependencies for gsi
 ```bash
-   git clone https://github.com/captaincookie200/treble_manifest.git
+   git clone https://github.com/captaincookie200/treble_manifest.git .repo/local_manifests/
 ```
 
 ### Afterwards, sync the source by running this command:
