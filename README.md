@@ -26,7 +26,7 @@ To do that, run these commands:
 
 ### Afterwards, sync the source by running this command:
 ```bash
-   repo sync -j$(nproc --all) --no-tags --force-sync --no-clone-bundle --current-branch
+   repo sync --force-sync --optimized-fetch --no-tags --current-branch --no-clone-bundle --prune -j$(nproc --all)
 ```
 
 ### After syncing, apply the patches:
