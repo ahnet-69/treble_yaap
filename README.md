@@ -35,6 +35,8 @@ Copy the patches folder to rom folder and in rom folder
    patches/apply-patches.sh .
 ```
 
+## NOTE: Its recommended to apply patches manually by going to respective directory of the patches and applying them by using "git am" as the script often skips applying critical patches for unknown reasons.
+
 ## Adapting for YAAP
 In rom folder,
 
