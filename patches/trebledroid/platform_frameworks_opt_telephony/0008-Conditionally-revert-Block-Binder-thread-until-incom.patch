@@ -1,4 +1,4 @@
-From 037c3627aed5a669a370d3c1f989c144f57b87e9 Mon Sep 17 00:00:00 2001
+From f6ded3f1ad48aa80f61163b935208311accca9d1 Mon Sep 17 00:00:00 2001
 From: ExactExampl <exactxmpl@pixelexperience.org>
 Date: Tue, 11 Oct 2022 12:38:00 +0300
 Subject: [PATCH] Conditionally revert "Block Binder thread until incoming call
@@ -13,37 +13,36 @@ This conditionally reverts commit 75c3dc9ba272b43971f519caba0382f9871c7d9d.
 
 Change-Id: I55a8f3bbca4a2b9a6bc7511e9fe2d0884a8818e5
 ---
- .../telephony/imsphone/ImsPhoneCallTracker.java | 17 +++++++++++++----
- 1 file changed, 13 insertions(+), 4 deletions(-)
+ .../internal/telephony/imsphone/ImsPhoneCallTracker.java | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
 diff --git a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
-index a47ae91..48a863e 100644
+index 48a863e..abfb601 100644
 --- a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
 +++ b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
-@@ -323,10 +323,19 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
+@@ -323,6 +323,9 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
  
          @Override
          public void onIncomingCall(IImsCallSession c, Bundle extras) {
--            // we want to ensure we block this binder thread until incoming call setup completes
--            // as to avoid race conditions where the ImsService tries to update the state of the
--            // call before the listeners have been attached.
--            executeAndWait(()-> processIncomingCall(c, extras));
 +            final boolean shouldBlockBinderThreadOnIncomingCalls = SystemProperties.getBoolean(
 +                    "ro.telephony.block_binder_thread_on_incoming_calls", true);
 +            if (shouldBlockBinderThreadOnIncomingCalls) {
-+                // we want to ensure we block this binder thread until incoming call setup completes
-+                // as to avoid race conditions where the ImsService tries to update the state of the
-+                // call before the listeners have been attached.
-+                executeAndWait(()-> processIncomingCall(c, extras));
+             final boolean shouldBlockBinderThreadOnIncomingCalls = SystemProperties.getBoolean(
+                     "ro.telephony.block_binder_thread_on_incoming_calls", true);
+             if (shouldBlockBinderThreadOnIncomingCalls) {
+@@ -330,6 +333,12 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
+                 // as to avoid race conditions where the ImsService tries to update the state of the
+                 // call before the listeners have been attached.
+                 executeAndWait(()-> processIncomingCall(c, extras));
 +            } else {
 +                // for legacy IMS we want to avoid blocking the binder thread, otherwise
 +                // we end up with half dead incoming calls with unattached call session
 +                TelephonyUtils.runWithCleanCallingIdentity(()-> processIncomingCall(c, extras),
 +                        mExecutor);
-+            }
-         }
- 
-         @Override
++            }                executeAndWait(()-> processIncomingCall(c, extras));
+             } else {
+                 // for legacy IMS we want to avoid blocking the binder thread, otherwise
+                 // we end up with half dead incoming calls with unattached call session
 -- 
 2.39.2
 
