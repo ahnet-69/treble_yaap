@@ -1,0 +1,25 @@
+From b66947445a599e70f55dcfa90ab8268ac21611d8 Mon Sep 17 00:00:00 2001
+From: TQMatvey <maybeetube@gmail.com>
+Date: Wed, 3 May 2023 08:05:18 -0400
+Subject: [PATCH] Fix Always On Display Shifting
+
+---
+ .../java/com/android/server/policy/BurnInProtectionHelper.java  | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/policy/BurnInProtectionHelper.java b/services/core/java/com/android/server/policy/BurnInProtectionHelper.java
+index c1744d82..9308a330 100644
+--- a/services/core/java/com/android/server/policy/BurnInProtectionHelper.java
++++ b/services/core/java/com/android/server/policy/BurnInProtectionHelper.java
+@@ -54,7 +54,7 @@ public class BurnInProtectionHelper implements DisplayManager.DisplayListener,
+     private static final String ACTION_BURN_IN_PROTECTION =
+             "android.internal.policy.action.BURN_IN_PROTECTION";
+ 
+-    private static final int BURN_IN_SHIFT_STEP = 2;
++    private static final int BURN_IN_SHIFT_STEP = 16;
+     private static final long CENTERING_ANIMATION_DURATION_MS = 100;
+     private final ValueAnimator mCenteringAnimator;
+ 
+-- 
+2.39.2
+

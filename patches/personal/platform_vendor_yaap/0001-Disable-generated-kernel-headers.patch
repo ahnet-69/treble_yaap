@@ -1,0 +1,42 @@
+From bb2b57a645e4c1e4447166a1b1a88d6b0c1c5259 Mon Sep 17 00:00:00 2001
+From: captaincookie200 <syedmusicrealise@gmail.com>
+Date: Wed, 3 May 2023 08:41:26 -0400
+Subject: [PATCH] Disable generated kernel headers
+
+---
+ build/soong/Android.bp | 12 ------------
+ 1 file changed, 12 deletions(-)
+
+diff --git a/build/soong/Android.bp b/build/soong/Android.bp
+index 9b09d93..ffb121b 100644
+--- a/build/soong/Android.bp
++++ b/build/soong/Android.bp
+@@ -19,9 +19,6 @@ bootstrap_go_package {
+ yaap_generator {
+     name: "generated_kernel_includes",
+ 
+-    // The headers make command
+-    cmd: "PATH=$(ORIG_PATH) make $(KERNEL_MAKE_FLAGS) -C $(TARGET_KERNEL_SOURCE) O=$(KERNEL_BUILD_OUT_PREFIX)$(genDir) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) headers_install",
+-
+     // Directories that can be imported by a cc_* module generated_headers property
+     export_include_dirs: [
+         "usr/audio/include/uapi",
+@@ -30,15 +27,6 @@ yaap_generator {
+         "usr/include/audio/include/uapi",
+         "usr/techpack/audio/include",
+     ],
+-
+-    // Sources for dependency tracking
+-    dep_root: "$(TARGET_KERNEL_SOURCE)",
+-    dep_files: [
+-        "Makefile",
+-        "include/**/*",
+-        "arch/$(KERNEL_ARCH)/include/**/*",
+-        "techpack/audio/include/**/*",
+-    ],
+ }
+ 
+ cc_library_headers {
+-- 
+2.39.2
+

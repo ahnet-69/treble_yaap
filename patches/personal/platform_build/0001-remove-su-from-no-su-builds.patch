@@ -1,0 +1,31 @@
+From 34ac92ea9bdb15b043afe9480113b5de4bd8ccb9 Mon Sep 17 00:00:00 2001
+From: captaincookie200 <syedmusicrealise@gmail.com>
+Date: Wed, 3 May 2023 08:28:46 -0400
+Subject: [PATCH] remove su from no su builds
+
+---
+ target/product/base_system.mk | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/target/product/base_system.mk b/target/product/base_system.mk
+index 4016ba5..f8ab585 100644
+--- a/target/product/base_system.mk
++++ b/target/product/base_system.mk
+@@ -397,10 +397,10 @@ PRODUCT_PACKAGES_DEBUG := \
+     unwind_reg_info \
+     unwind_symbols \
+ 
+-ifeq ($(YAAP_BUILD),)
+-PRODUCT_PACKAGES_DEBUG += \
+-    su
+-endif
++#ifeq ($(YAAP_BUILD),)
++#PRODUCT_PACKAGES_DEBUG += \
++#    su
++#endif
+ 
+ # The set of packages whose code can be loaded by the system server.
+ PRODUCT_SYSTEM_SERVER_APPS += \
+-- 
+2.39.2
+
