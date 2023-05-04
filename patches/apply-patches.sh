@@ -4,6 +4,7 @@ set -e
 
 source="$(readlink -f -- $1)"
 trebledroid="$source/patches/trebledroid"
+personal="$source/patches/personal"
 ponces="$source/patches/ponces"
 matvey="$source/patches/matvey"
 
