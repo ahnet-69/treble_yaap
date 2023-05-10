@@ -10,39 +10,39 @@ As a first step, you'll have to create and enter a folder with the appropriate n
 To do that, run these commands:
 
 ```bash
-   mkdir YAAP
-   cd YAAP
+mkdir YAAP
+cd YAAP
 ```
 
 ### To initialize your local repository, run this command:
 ```bash
-   repo init -u https://github.com/yaap/manifest.git -b thirteen
+repo init -u https://github.com/yaap/manifest.git -b thirteen
 ```
 
 ### Clone the Manifest to add necessary dependencies for gsi
 ```bash
-   git clone https://github.com/ahnet-69/treble_manifest.git .repo/local_manifests/
+git clone https://github.com/ahnet-69/treble_manifest.git .repo/local_manifests/
 ```
 
 ### Afterwards, sync the source by running this command:
 ```bash
-   repo sync --force-sync --optimized-fetch --no-tags --current-branch --no-clone-bundle --prune -j$(nproc --all)
+repo sync --force-sync --optimized-fetch --no-tags --current-branch --no-clone-bundle --prune -j$(nproc --all)
 ```
 
 ### After syncing, apply the patches:
 Copy the patches folder to rom folder and in rom folder
 ```bash
-   patches/apply-patches.sh .
+patches/apply-patches.sh .
 ```
 
-## NOTE: Its recommended to apply patches manually by going to respective directory of the patches and applying them by using "git am" as the script often skips applying critical patches for unknown reasons.
+#### NOTE: Its recommended to apply patches manually by going to respective directory of the patches and applying them by using "git am" as the script often skips applying critical patches for unknown reasons.
 
 ## Adapting for YAAP
 In rom folder,
 
 ```bash
-   cd device/phh/treble
-   bash generate.sh vendor/yaap/config/common_full_phone.mk
+ cd device/phh/treble
+ bash generate.sh vendor/yaap/config/common_full_phone.mk
 ```
 
 ### Turn on caching to speed up build
@@ -55,13 +55,15 @@ export CCACHE_MAXSIZE=50G # 50 GB
 ```
 
 ## Compilation 
-In rom folder,
+In rom folder, for building Gapps
 
 ```bash
- . build/envsetup.sh
- ccache -M 50G -F 0
- lunch treble_arm64_bgN-userdebug 
- make systemimage -j$(nproc --all)
+. build/envsetup.sh
+ccache -M 50G -F 0
+lunch treble_arm64_bgN-userdebug 
+ 
+ # Remove TARGET_BUILD_GAPPS=true if building vanilla.
+TARGET_BUILD_GAPPS=true make systemimage -j$(nproc --all)
 ```
 
 ## Compress
@@ -70,8 +72,8 @@ If you want to compress the build.
 In rom folder,
 
 ```bash
-   cd out/target/product/tdgsi_arm64_ab
-   xz -z -k system.img 
+cd out/target/product/tdgsi_arm64_ab
+xz -9 -T0 -v -z system.img 
 ```
 
 ## Troubleshoot
