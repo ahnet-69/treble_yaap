@@ -21,7 +21,7 @@ repo init -u https://github.com/yaap/manifest.git -b thirteen
 
 ### Clone the Manifest to add necessary dependencies for gsi
 ```bash
-git clone https://github.com/ahnet-69/treble_manifest.git .repo/local_manifests/
+git clone https://github.com/ahnet-69/treble_manifest.git -b yaap-13 .repo/local_manifests
 ```
 
 ### Afterwards, sync the source by running this command:
