@@ -1,4 +1,4 @@
-From d626a939c00afcaa47aeed0fec9e09eaafcb416d Mon Sep 17 00:00:00 2001
+From 9fc7df3d04357da8155a9f92621556ee53d76f56 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sun, 18 Dec 2022 18:20:40 -0500
 Subject: [PATCH] FOD support for Asus ZF8 and Samsung devices
@@ -8,38 +8,24 @@ And thanks @davigamer987 for donating enough to get a Samsung FOD device
 to make this
 ---
  packages/SystemUI/Android.bp                  |   1 +
- packages/SystemUI/res/values/config.xml       |   2 +-
  .../biometrics/UdfpsControllerOverlay.kt      |   9 +-
  .../android/systemui/biometrics/UdfpsView.kt  | 161 ++++++++++--
  services/core/Android.bp                      |   6 +
- .../server/biometrics/AuthService.java        | 248 +++++++++++++++++-
- 6 files changed, 384 insertions(+), 43 deletions(-)
+ .../server/biometrics/AuthService.java        | 247 +++++++++++++++++-
+ 5 files changed, 383 insertions(+), 41 deletions(-)
 
 diff --git a/packages/SystemUI/Android.bp b/packages/SystemUI/Android.bp
-index 7a6e3f71..47499997 100644
+index 7a6e3f71..7bb988e2 100644
 --- a/packages/SystemUI/Android.bp
 +++ b/packages/SystemUI/Android.bp
-@@ -176,6 +176,7 @@ android_library {
-         "jsr330",
+@@ -177,6 +177,7 @@ android_library {
          "lottie",
          "LowLightDreamLib",
-+        "vendor.goodix.hardware.biometrics.fingerprint-V2.1-java",
          "motion_tool_lib",
++        "vendor.goodix.hardware.biometrics.fingerprint-V2.1-java",
          "bcsmartspace-google",
      ],
-diff --git a/packages/SystemUI/res/values/config.xml b/packages/SystemUI/res/values/config.xml
-index 516f287d..05d48038 100644
---- a/packages/SystemUI/res/values/config.xml
-+++ b/packages/SystemUI/res/values/config.xml
-@@ -580,7 +580,7 @@
- 
-     <!-- The radius of the enrollment progress bar, in dp -->
-     <integer name="config_udfpsEnrollProgressBar" translatable="false">
--        280
-+        50
-     </integer>
- 
-     <!-- The time (in ms) needed to trigger the lock icon view's long-press affordance -->
+     manifest: "AndroidManifest.xml",
 diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsControllerOverlay.kt b/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsControllerOverlay.kt
 index 6d1e958e..de0e84fb 100644
 --- a/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsControllerOverlay.kt
@@ -68,7 +54,7 @@ index 6d1e958e..de0e84fb 100644
                          if (accessibilityManager.isTouchExplorationEnabled) {
                              setOnHoverListener { v, event -> onTouch(v, event, true) }
 diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsView.kt b/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsView.kt
-index 97590822..0c67604b 100644
+index 97590822..c8c17b56 100644
 --- a/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsView.kt
 +++ b/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsView.kt
 @@ -19,19 +19,27 @@ import android.content.Context
@@ -183,7 +169,7 @@ index 97590822..0c67604b 100644
      override fun dozeTimeTick() {
          animationViewController?.dozeTimeTick()
      }
-@@ -157,37 +209,92 @@ class UdfpsView(
+@@ -157,37 +209,94 @@ class UdfpsView(
              !(animationViewController?.shouldPauseAuth() ?: false)
      }
  
@@ -215,19 +201,16 @@ index 97590822..0c67604b 100644
 -        }
 -    }
 +        mUdfpsDisplayMode?.enable(onDisplayConfigured)
++
++        mySurfaceView.setVisibility(VISIBLE)
++        Log.d("PHH", "setting surface visible!")
++
++        val brightness = File("/sys/class/backlight/panel0-backlight/brightness").readText().toDouble()
++        val maxBrightness = File("/sys/class/backlight/panel0-backlight/max_brightness").readText().toDouble()
  
 -    private fun doIlluminate(surface: Surface?, onDisplayConfigured: Runnable?) {
 -        if (ghbmView != null && surface == null) {
 -            Log.e(TAG, "doIlluminate | surface must be non-null for GHBM")
--        }
-+        mySurfaceView.setVisibility(VISIBLE)
-+        Log.d("PHH", "setting surface visible!")
-+        val brightness = File("/sys/class/backlight/panel0-backlight/brightness").readText().toDouble()
-+        val maxBrightness = File("/sys/class/backlight/panel0-backlight/max_brightness").readText().toDouble()
- 
--        mUdfpsDisplayMode?.enable {
--            onDisplayConfigured?.run()
--            ghbmView?.drawIlluminationDot(RectF(sensorRect))
 +        // Assume HBM is max brightness
 +        val dim = 1.0 - Math.pow( (brightness / maxBrightness), 1/2.3);
 +        Log.d("PHH-Enroll", "Brightness is $brightness / $maxBrightness, setting dim to $dim")
@@ -236,7 +219,11 @@ index 97590822..0c67604b 100644
 +        }
 +        if (hasSamsungMask) {
 +            dimUpdate(dim.toFloat())
-+        }
+         }
+ 
+-        mUdfpsDisplayMode?.enable {
+-            onDisplayConfigured?.run()
+-            ghbmView?.drawIlluminationDot(RectF(sensorRect))
 +        if(android.os.SystemProperties.get("ro.vendor.build.fingerprint").contains("ASUS")) {
 +            goodixCmd(200001)
          }
@@ -314,7 +301,7 @@ index 89c8ca56..604e1be0 100644
      javac_shard_size: 50,
  }
 diff --git a/services/core/java/com/android/server/biometrics/AuthService.java b/services/core/java/com/android/server/biometrics/AuthService.java
-index 951cf576..47e6dbe5 100644
+index 951cf576..3493fb67 100644
 --- a/services/core/java/com/android/server/biometrics/AuthService.java
 +++ b/services/core/java/com/android/server/biometrics/AuthService.java
 @@ -31,8 +31,6 @@ import static android.hardware.biometrics.BiometricAuthenticator.TYPE_NONE;
@@ -326,10 +313,10 @@ index 951cf576..47e6dbe5 100644
  import android.annotation.NonNull;
  import android.annotation.Nullable;
  import android.app.AppOpsManager;
-@@ -77,6 +75,22 @@ import java.util.ArrayList;
+@@ -76,6 +74,21 @@ import com.android.server.SystemService;
+ import java.util.ArrayList;
  import java.util.Arrays;
  import java.util.List;
- 
 +import android.hardware.display.DisplayManager;
 +
 +import android.graphics.Point;
@@ -345,11 +332,10 @@ index 951cf576..47e6dbe5 100644
 +import vendor.samsung.hardware.biometrics.fingerprint.V3_0.ISehBiometricsFingerprint;
 +import vendor.goodix.hardware.biometrics.fingerprint.V2_1.IGoodixFingerprintDaemon;
 +import vendor.samsung.hardware.sysinput.V1_0.ISehSysInputDev;
-+
+ 
  /**
   * System service that provides an interface for authenticating with biometrics and
-  * PIN/pattern/password to BiometricPrompt and lock screen.
-@@ -95,6 +109,9 @@ public class AuthService extends SystemService {
+@@ -95,6 +108,9 @@ public class AuthService extends SystemService {
      @VisibleForTesting
      final IAuthService.Stub mImpl;
  
@@ -359,7 +345,7 @@ index 951cf576..47e6dbe5 100644
      /**
       * Class for injecting dependencies into AuthService.
       * TODO(b/141025588): Replace with a dependency injection framework (e.g. Guice, Dagger).
-@@ -652,6 +669,72 @@ public class AuthService extends SystemService {
+@@ -652,6 +668,72 @@ public class AuthService extends SystemService {
          registerAuthenticators(hidlConfigs);
  
          mInjector.publishBinderService(this, mImpl);
@@ -386,14 +372,14 @@ index 951cf576..47e6dbe5 100644
 +                        if("0".equals(actualMask)) {
 +                            eventReq = 1; //released
 +                        } else {
-+                            eventReq = 2; //pressed
++                           eventReq = 2; //pressed
 +                        }
 +                        if(mSamsungFingerprint != null) {
 +                            mSamsungFingerprint.sehRequest(22 /* SEM_FINGER_STATE */, eventReq, new java.util.ArrayList<Byte>(),
 +                                    (int retval, java.util.ArrayList<Byte> out) -> {} );
 +                        }
 +                    } catch(Exception e) {
-+                        Slog.d("PHH-Enroll", "Failed setting samsung event for mask observer", e);
++                       Slog.d("PHH-Enroll", "Failed setting samsung event for mask observer", e);
 +                    }
 +                }
 +            };
@@ -432,7 +418,7 @@ index 951cf576..47e6dbe5 100644
      }
  
      /**
-@@ -775,18 +858,100 @@ public class AuthService extends SystemService {
+@@ -775,18 +857,100 @@ public class AuthService extends SystemService {
                  ? modality : (modality & ~BiometricAuthenticator.TYPE_CREDENTIAL);
      }
  
@@ -538,7 +524,7 @@ index 951cf576..47e6dbe5 100644
  
          // config_is_powerbutton_fps indicates whether device has a power button fingerprint sensor.
          final boolean isPowerbuttonFps = getContext().getResources().getBoolean(
-@@ -815,12 +980,6 @@ public class AuthService extends SystemService {
+@@ -815,12 +979,6 @@ public class AuthService extends SystemService {
                      resetLockoutRequiresHardwareAuthToken,
                      List.of(new SensorLocationInternal("" /* display */, udfpsProps[0],
                              udfpsProps[1], udfpsProps[2])));
@@ -551,7 +537,7 @@ index 951cf576..47e6dbe5 100644
          } else {
              return new FingerprintSensorPropertiesInternal(sensorId,
                      Utils.authenticatorStrengthToPropertyStrength(strength), maxEnrollmentsPerUser,
-@@ -854,4 +1013,67 @@ public class AuthService extends SystemService {
+@@ -854,4 +1012,67 @@ public class AuthService extends SystemService {
                  componentInfo, resetLockoutRequiresHardwareAuthToken,
                  resetLockoutRequiresChallenge);
      }
