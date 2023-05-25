@@ -38,11 +38,10 @@ patches/apply-patches.sh .
 #### NOTE: Its recommended to apply patches manually by going to respective directory of the patches and applying them by using "git am" as the script often skips applying critical patches for unknown reasons.
 
 ## Adapting for YAAP
-In rom folder,
-
+Clone this repository and then copy YAAP.mk to device/phh/treble in rom folder. Then run the following commands:
 ```bash
  cd device/phh/treble
- bash generate.sh vendor/yaap/config/common_full_phone.mk
+ bash generate.sh YAAP
 ```
 
 ### Turn on caching to speed up build
