@@ -1,0 +1,26 @@
+From c00c3309aaaf24da2379e472d28d7beef3e319a1 Mon Sep 17 00:00:00 2001
+From: ItsLynix <lynixthewolf@gmail.com>
+Date: Tue, 29 Nov 2022 13:57:25 +0000
+Subject: [PATCH] genfs_contexts: Disable fscon generation on / NOTE: Necessary
+ to avoid some vendor conflicts on MTK devices
+
+Change-Id: Ie103db014710cf1e136913a7f2cabb4a447dda4b
+---
+ common/private/genfs_contexts | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/common/private/genfs_contexts b/common/private/genfs_contexts
+index c629305..c92af6c 100644
+--- a/common/private/genfs_contexts
++++ b/common/private/genfs_contexts
+@@ -1,5 +1,5 @@
+-ifelse(board_excludes_fuseblk_sepolicy, `true', ,
+-genfscon fuseblk / u:object_r:vfat:s0
+-)
++#ifelse(board_excludes_fuseblk_sepolicy, `true', ,
++#genfscon fuseblk / u:object_r:vfat:s0
++#)
+
+ genfscon sysfs /devices/virtual/timed_output/vibrator u:object_r:sysfs_vibrator:s0
+-- 
+2.34.1
