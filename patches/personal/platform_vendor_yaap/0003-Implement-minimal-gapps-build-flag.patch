@@ -1,0 +1,28 @@
+From e8d6fd2ec86e21d9a3c79ebeb7ec932315e40167 Mon Sep 17 00:00:00 2001
+From: ahnet-69 <syedmusicrealise@gmail.com>
+Date: Sun, 4 Jun 2023 13:46:44 +0500
+Subject: [PATCH] Implement minimal gapps build flag
+
+---
+ config/common.mk | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/config/common.mk b/config/common.mk
+index 24a517a..7981946 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -143,8 +143,10 @@ OVERRIDE_TARGET_FLATTEN_APEX := true
+ PRODUCT_PRODUCT_PROPERTIES += ro.apex.updatable=false
+ endif
+ 
+-ifeq ($(TARGET_BUILD_GAPPS),true)
++ifeq ($(TARGET_BUILD_GAPPS_FULL),true)
+     $(call inherit-product-if-exists, vendor/google/gms/common/gms-full.mk)
++else ifeq ($(TARGET_BUILD_GAPPS_MINIMAL),true)
++    $(call inherit-product-if-exists, vendor/google/gms/common/gms-minimal.mk)
+ else
+     $(call inherit-product-if-exists, vendor/google/pixel/config.mk)
+     $(call inherit-product, external/svox/svox_tts.mk)
+-- 
+2.39.2
+
