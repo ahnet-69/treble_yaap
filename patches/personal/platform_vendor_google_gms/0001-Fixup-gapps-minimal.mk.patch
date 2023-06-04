@@ -1,17 +1,25 @@
-From 2e3c0cfc64bb068bfc51f55fce7255c05fa38857 Mon Sep 17 00:00:00 2001
+From 590a849109029480e84dcfc301e1481b55d68bd5 Mon Sep 17 00:00:00 2001
 From: ahnet-69 <syedmusicrealise@gmail.com>
-Date: Sun, 4 Jun 2023 15:56:33 +0500
-Subject: [PATCH] Remove various files causing missing errors
+Date: Sun, 4 Jun 2023 17:08:54 +0500
+Subject: [PATCH] Fixup gapps-minimal.mk
 
 ---
- common/gms-minimal.mk | 7 -------
- 1 file changed, 7 deletions(-)
+ common/gms-minimal.mk | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
 
 diff --git a/common/gms-minimal.mk b/common/gms-minimal.mk
-index 7f35c19..a3de00f 100644
+index 7f35c19..e5e961e 100644
 --- a/common/gms-minimal.mk
 +++ b/common/gms-minimal.mk
-@@ -73,17 +73,10 @@ PRODUCT_PACKAGES += \
+@@ -47,6 +47,7 @@ PRODUCT_PACKAGES := \
+     Phonesky \
+     GCS \
+     GmsCore \
++    PrebuiltGmsCore \
+     GoogleFeedback \
+     GoogleOneTimeInitializer \
+     GoogleServicesFramework \
+@@ -73,17 +74,10 @@ PRODUCT_PACKAGES += \
  
  # GMS common configuration files
  PRODUCT_COPY_FILES += \
