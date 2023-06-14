@@ -1,7 +1,7 @@
-From 1ad04c162b436bc446c93d2956559a09009d4aa0 Mon Sep 17 00:00:00 2001
+From ccc32155f27547f596f483abe1dbc6cd6e9ea23e Mon Sep 17 00:00:00 2001
 From: Danny Lin <danny@kdrag0n.dev>
 Date: Sat, 16 Oct 2021 05:27:57 -0700
-Subject: [PATCH 05/38] Add support for app signature spoofing
+Subject: [PATCH] Add support for app signature spoofing
 
 This is needed by microG GmsCore to pretend to be the official Google
 Play Services package, because client apps check the package signature
@@ -32,13 +32,13 @@ Changes made for Android 13:
 Change-Id: Ied7d6ce0b83a2d2345c3abba0429998d86494a88
 ---
  core/api/current.txt                          |  2 ++
- core/res/AndroidManifest.xml                  | 15 ++++++++++
- core/res/res/values/strings.xml               | 12 ++++++++
- .../com/android/server/pm/ComputerEngine.java | 30 +++++++++++++++++--
- 4 files changed, 56 insertions(+), 3 deletions(-)
+ core/res/AndroidManifest.xml                  | 16 +++++++--
+ core/res/res/values/strings.xml               | 12 +++++++
+ .../com/android/server/pm/ComputerEngine.java | 36 +++++++++----------
+ 4 files changed, 44 insertions(+), 22 deletions(-)
 
 diff --git a/core/api/current.txt b/core/api/current.txt
-index 487e57d114c9..04e69741b9fd 100644
+index 150454cb..d0f5f348 100644
 --- a/core/api/current.txt
 +++ b/core/api/current.txt
 @@ -87,6 +87,7 @@ package android {
@@ -58,13 +58,15 @@ index 487e57d114c9..04e69741b9fd 100644
      field public static final String MICROPHONE = "android.permission-group.MICROPHONE";
      field public static final String NEARBY_DEVICES = "android.permission-group.NEARBY_DEVICES";
 diff --git a/core/res/AndroidManifest.xml b/core/res/AndroidManifest.xml
-index 6a80d1cb62a7..189c5c223cd0 100644
+index 5908445c..a456ac6b 100644
 --- a/core/res/AndroidManifest.xml
 +++ b/core/res/AndroidManifest.xml
-@@ -3564,6 +3564,21 @@
+@@ -3569,10 +3569,20 @@
          android:description="@string/permdesc_getPackageSize"
          android:protectionLevel="normal" />
  
+-    <!-- @hide Allows an application to change the package signature as
+-         seen by applications. Only allowed to be used by microG.-->
 +    <!-- Dummy user-facing group for faking package signature -->
 +    <permission-group android:name="android.permission-group.FAKE_PACKAGE"
 +        android:label="@string/permgrouplab_fake_package_signature"
@@ -74,20 +76,20 @@ index 6a80d1cb62a7..189c5c223cd0 100644
 +
 +    <!-- Allows an application to change the package signature as
 +         seen by applications -->
-+    <permission android:name="android.permission.FAKE_PACKAGE_SIGNATURE"
+     <permission android:name="android.permission.FAKE_PACKAGE_SIGNATURE"
+-        android:protectionLevel="signature|privileged" />
 +        android:permissionGroup="android.permission-group.UNDEFINED"
 +        android:protectionLevel="signature|privileged"
 +        android:label="@string/permlab_fakePackageSignature"
 +        android:description="@string/permdesc_fakePackageSignature" />
-+
+ 
      <!-- @deprecated No longer useful, see
           {@link android.content.pm.PackageManager#addPackageToPreferred}
-          for details. -->
 diff --git a/core/res/res/values/strings.xml b/core/res/res/values/strings.xml
-index 9410e0682106..7ed7a03f1b61 100644
+index 18caea71..1d59180b 100644
 --- a/core/res/res/values/strings.xml
 +++ b/core/res/res/values/strings.xml
-@@ -977,6 +977,18 @@
+@@ -982,6 +982,18 @@
  
      <!--  Permissions -->
  
@@ -107,10 +109,10 @@ index 9410e0682106..7ed7a03f1b61 100644
      <string name="permlab_statusBar">disable or modify status bar</string>
      <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
 diff --git a/services/core/java/com/android/server/pm/ComputerEngine.java b/services/core/java/com/android/server/pm/ComputerEngine.java
-index 46b7460dff1b..40549962436f 100644
+index 9edf067f..5b147feb 100644
 --- a/services/core/java/com/android/server/pm/ComputerEngine.java
 +++ b/services/core/java/com/android/server/pm/ComputerEngine.java
-@@ -1603,6 +1603,29 @@ public class ComputerEngine implements Computer {
+@@ -1610,17 +1610,22 @@ public class ComputerEngine implements Computer {
          return result;
      }
  
@@ -119,9 +121,17 @@ index 46b7460dff1b..40549962436f 100644
 +            p.getMetaData().getString("fake-signature") != null;
 +    }
 +
-+    private PackageInfo mayFakeSignature(AndroidPackage p, PackageInfo pi,
-+            Set<String> permissions) {
-+        try {
+     private PackageInfo mayFakeSignature(AndroidPackage p, PackageInfo pi,
+             Set<String> permissions) {
+         try {
+-            if (permissions.contains("android.permission.FAKE_PACKAGE_SIGNATURE")) {
+-                if (DEBUG_PACKAGE_INFO) {
+-                    Log.v(TAG, "Spoofing signature for microG");
+-                }
+-                if (pi != null) {
+-                    pi.signatures = new Signature[] {new Signature(MICROG_FAKE_SIGNATURE)};
+-                }
+-            }
 +            if (p.getMetaData() != null &&
 +                    p.getTargetSdkVersion() > Build.VERSION_CODES.LOLLIPOP_MR1) {
 +                String sig = p.getMetaData().getString("fake-signature");
@@ -130,34 +140,34 @@ index 46b7460dff1b..40549962436f 100644
 +                    pi.signatures = new Signature[] {new Signature(sig)};
 +                        }
 +                    }
-+        } catch (Throwable t) {
-+            // We should never die because of any failures, this is system code!
-+            Log.w("PackageManagerService.FAKE_PACKAGE_SIGNATURE", t);
-+        }
-+        return pi;
-+    }
-+
-     public final PackageInfo generatePackageInfo(PackageStateInternal ps,
-             @PackageManager.PackageInfoFlagsBits long flags, int userId) {
-         if (!mUserManager.exists(userId)) return null;
-@@ -1632,13 +1655,14 @@ public class ComputerEngine implements Computer {
-             final int[] gids = (flags & PackageManager.GET_GIDS) == 0 ? EMPTY_INT_ARRAY
-                     : mPermissionManager.getGidsForUid(UserHandle.getUid(userId, ps.getAppId()));
-             // Compute granted permissions only if package has requested permissions
--            final Set<String> permissions = ((flags & PackageManager.GET_PERMISSIONS) == 0
-+            final Set<String> permissions = (((flags & PackageManager.GET_PERMISSIONS) == 0
+         } catch (Throwable t) {
+             // We should never die because of any failures, this is system code!
+             Log.w("PackageManagerService.FAKE_PACKAGE_SIGNATURE", t);
+@@ -1662,20 +1667,13 @@ public class ComputerEngine implements Computer {
+             // Compute granted permissions only if package has requested permissions,
+             // or for microG
+             final Set<String> permissions = (((flags & PackageManager.GET_PERMISSIONS) == 0
+-                    && !isMicroG)
 +                    && !requestsFakeSignature(p))
                      || ArrayUtils.isEmpty(p.getRequestedPermissions())) ? Collections.emptySet()
                      : mPermissionManager.getGrantedPermissions(ps.getPackageName(), userId);
  
--            PackageInfo packageInfo = PackageInfoUtils.generate(p, gids, flags,
+-            PackageInfo packageInfo;
+-            if (isMicroG) {
+-                packageInfo = mayFakeSignature(p, PackageInfoUtils.generate(p, gids, flags,
+-                        state.getFirstInstallTime(), ps.getLastUpdateTime(), permissions, state,
+-                        userId, ps), permissions);
+-            } else {
+-                packageInfo = PackageInfoUtils.generate(p, gids, flags,
+-                        state.getFirstInstallTime(), ps.getLastUpdateTime(), permissions, state,
+-                        userId, ps);
+-            }
 +            PackageInfo packageInfo = mayFakeSignature(p, PackageInfoUtils.generate(p, gids, flags,
-                     state.getFirstInstallTime(), ps.getLastUpdateTime(), permissions, state, userId,
--                    ps);
++                     state.getFirstInstallTime(), ps.getLastUpdateTime(), permissions, state, userId,
 +                    ps), permissions);
  
              if (packageInfo == null) {
                  return null;
 -- 
-2.25.1
+2.39.2
 

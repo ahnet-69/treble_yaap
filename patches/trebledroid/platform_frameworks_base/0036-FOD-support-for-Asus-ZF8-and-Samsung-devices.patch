@@ -1,4 +1,4 @@
-From a227cc481efaa1d95c92e77d54fb0dc57d5d4d67 Mon Sep 17 00:00:00 2001
+From f28d95563e63a0041e1428ac98baf30beb8cb836 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sun, 18 Dec 2022 18:20:40 -0500
 Subject: [PATCH] FOD support for Asus ZF8 and Samsung devices
@@ -10,13 +10,13 @@ to make this
  packages/SystemUI/Android.bp                  |   1 +
  packages/SystemUI/res/values/config.xml       |   2 +-
  .../biometrics/UdfpsControllerOverlay.kt      |   9 +-
- .../android/systemui/biometrics/UdfpsView.kt  | 161 ++++++++++--
+ .../android/systemui/biometrics/UdfpsView.kt  | 160 ++++++++++--
  services/core/Android.bp                      |   7 +-
- .../server/biometrics/AuthService.java        | 248 +++++++++++++++++-
- 6 files changed, 385 insertions(+), 43 deletions(-)
+ .../server/biometrics/AuthService.java        | 246 +++++++++++++++++-
+ 6 files changed, 385 insertions(+), 40 deletions(-)
 
 diff --git a/packages/SystemUI/Android.bp b/packages/SystemUI/Android.bp
-index 7a6e3f71..7bb988e2 100644
+index 5452bd12..3f3c2888 100644
 --- a/packages/SystemUI/Android.bp
 +++ b/packages/SystemUI/Android.bp
 @@ -177,6 +177,7 @@ android_library {
@@ -28,10 +28,10 @@ index 7a6e3f71..7bb988e2 100644
      ],
      manifest: "AndroidManifest.xml",
 diff --git a/packages/SystemUI/res/values/config.xml b/packages/SystemUI/res/values/config.xml
-index 3efe0d5b..05d48038 100644
+index 2b7f15c1..22b70a99 100644
 --- a/packages/SystemUI/res/values/config.xml
 +++ b/packages/SystemUI/res/values/config.xml
-@@ -580,7 +580,7 @@
+@@ -585,7 +585,7 @@
  
      <!-- The radius of the enrollment progress bar, in dp -->
      <integer name="config_udfpsEnrollProgressBar" translatable="false">
@@ -41,10 +41,10 @@ index 3efe0d5b..05d48038 100644
  
      <!-- The time (in ms) needed to trigger the lock icon view's long-press affordance -->
 diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsControllerOverlay.kt b/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsControllerOverlay.kt
-index 6d1e958e..4b7a3b24 100644
+index baa46e87..f8cf3c1c 100644
 --- a/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsControllerOverlay.kt
 +++ b/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsControllerOverlay.kt
-@@ -118,8 +118,10 @@ class UdfpsControllerOverlay @JvmOverloads constructor(
+@@ -120,8 +120,10 @@ class UdfpsControllerOverlay @JvmOverloads constructor(
          gravity = android.view.Gravity.TOP or android.view.Gravity.LEFT
          layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
          flags = (Utils.FINGERPRINT_OVERLAY_LAYOUT_PARAM_FLAGS or
@@ -57,7 +57,7 @@ index 6d1e958e..4b7a3b24 100644
          // Avoid announcing window title.
          accessibilityTitle = " "
  
-@@ -187,6 +189,9 @@ class UdfpsControllerOverlay @JvmOverloads constructor(
+@@ -189,6 +191,9 @@ class UdfpsControllerOverlay @JvmOverloads constructor(
                      windowManager.addView(this, coreLayoutParams.updateDimensions(animation))
                      sensorRect = sensorBounds
                      touchExplorationEnabled = accessibilityManager.isTouchExplorationEnabled
@@ -68,10 +68,10 @@ index 6d1e958e..4b7a3b24 100644
                          if (accessibilityManager.isTouchExplorationEnabled) {
                              setOnHoverListener { v, event -> onTouch(v, event, true) }
 diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsView.kt b/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsView.kt
-index 97590822..c8c17b56 100644
+index 1e2e6c8b..eff68df7 100644
 --- a/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsView.kt
 +++ b/packages/SystemUI/src/com/android/systemui/biometrics/UdfpsView.kt
-@@ -19,19 +19,27 @@ import android.content.Context
+@@ -19,16 +19,23 @@ import android.content.Context
  import android.graphics.Canvas
  import android.graphics.Color
  import android.graphics.Paint
@@ -96,11 +96,7 @@ index 97590822..c8c17b56 100644
  
  private const val TAG = "UdfpsView"
  
-+
- /**
-  * The main view group containing all UDFPS animations.
-  */
-@@ -39,6 +47,54 @@ class UdfpsView(
+@@ -39,6 +46,54 @@ class UdfpsView(
      context: Context,
      attrs: AttributeSet?
  ) : FrameLayout(context, attrs), DozeReceiver {
@@ -155,7 +151,7 @@ index 97590822..c8c17b56 100644
  
      // Use expanded overlay when feature flag is true, set by UdfpsViewController
      var useExpandedOverlay: Boolean = false
-@@ -61,14 +117,14 @@ class UdfpsView(
+@@ -61,14 +116,14 @@ class UdfpsView(
              a.getFloat(R.styleable.UdfpsView_sensorTouchAreaCoefficient, 0f)
          }
  
@@ -172,7 +168,7 @@ index 97590822..c8c17b56 100644
      /** Debug message. */
      var debugMessage: String? = null
          set(value) {
-@@ -89,10 +145,6 @@ class UdfpsView(
+@@ -89,10 +144,6 @@ class UdfpsView(
          return (animationViewController == null || !animationViewController!!.shouldPauseAuth())
      }
  
@@ -183,7 +179,7 @@ index 97590822..c8c17b56 100644
      override fun dozeTimeTick() {
          animationViewController?.dozeTimeTick()
      }
-@@ -157,37 +209,94 @@ class UdfpsView(
+@@ -153,37 +204,94 @@ class UdfpsView(
              !(animationViewController?.shouldPauseAuth() ?: false)
      }
  
@@ -282,7 +278,7 @@ index 97590822..c8c17b56 100644
 +                        }
 +                    } catch(e: Exception) {
 +                        Log.d("PHH-Enroll", "Failed dimpdate off", e)
-+                    }
++                   }
 +                }
 +            };
 +            fodFileObserver?.startWatching();
@@ -316,7 +312,7 @@ index 34a45798..604e1be0 100644
      javac_shard_size: 50,
  }
 diff --git a/services/core/java/com/android/server/biometrics/AuthService.java b/services/core/java/com/android/server/biometrics/AuthService.java
-index 0f954477..b47b47c4 100644
+index a94c4c07..96a6863d 100644
 --- a/services/core/java/com/android/server/biometrics/AuthService.java
 +++ b/services/core/java/com/android/server/biometrics/AuthService.java
 @@ -31,8 +31,6 @@ import static android.hardware.biometrics.BiometricAuthenticator.TYPE_NONE;
@@ -434,7 +430,7 @@ index 0f954477..b47b47c4 100644
      }
  
      /**
-@@ -775,18 +858,100 @@ public class AuthService extends SystemService {
+@@ -775,18 +858,104 @@ public class AuthService extends SystemService {
                  ? modality : (modality & ~BiometricAuthenticator.TYPE_CREDENTIAL);
      }
  
@@ -526,21 +522,22 @@ index 0f954477..b47b47c4 100644
 +        int[] udfpsProps = getContext().getResources().getIntArray(
                  com.android.internal.R.array.config_udfps_sensor_props);
  
--        // Non-empty workaroundLocations indicates that the sensor is SFPS.
--        final List<SensorLocationInternal> workaroundLocations =
--                getWorkaroundSensorProps(getContext());
+         // Non-empty workaroundLocations indicates that the sensor is SFPS.
+         final List<SensorLocationInternal> workaroundLocations =
+                 getWorkaroundSensorProps(getContext());
+ 
+-        final boolean isUdfps = !ArrayUtils.isEmpty(udfpsProps);
 +        boolean isUdfps = !ArrayUtils.isEmpty(udfpsProps);
 +        if(!isUdfps) udfpsProps = dynamicUdfpsProps();
 +        isUdfps = !ArrayUtils.isEmpty(udfpsProps);
- 
--        final boolean isUdfps = !ArrayUtils.isEmpty(udfpsProps);
++
 +        if(udfpsProps.length > 0) {
 +            Slog.d("PHH-Enroll", "Got udfps infos " + udfpsProps[0] + ", " + udfpsProps[1] + ", " + udfpsProps[2]);
 +        }
  
          // config_is_powerbutton_fps indicates whether device has a power button fingerprint sensor.
          final boolean isPowerbuttonFps = getContext().getResources().getBoolean(
-@@ -815,12 +980,6 @@ public class AuthService extends SystemService {
+@@ -815,12 +984,6 @@ public class AuthService extends SystemService {
                      resetLockoutRequiresHardwareAuthToken,
                      List.of(new SensorLocationInternal("" /* display */, udfpsProps[0],
                              udfpsProps[1], udfpsProps[2])));
@@ -553,7 +550,7 @@ index 0f954477..b47b47c4 100644
          } else {
              return new FingerprintSensorPropertiesInternal(sensorId,
                      Utils.authenticatorStrengthToPropertyStrength(strength), maxEnrollmentsPerUser,
-@@ -854,4 +1013,67 @@ public class AuthService extends SystemService {
+@@ -854,4 +1017,67 @@ public class AuthService extends SystemService {
                  componentInfo, resetLockoutRequiresHardwareAuthToken,
                  resetLockoutRequiresChallenge);
      }
@@ -622,5 +619,5 @@ index 0f954477..b47b47c4 100644
 +    }
  }
 -- 
-2.40.1
+2.39.2
 
