@@ -6,13 +6,26 @@ Most devices have small system partition which might even be less than 3GB. To t
 Basically imagine if you have two files that are close, for instance vndk-28/libbinder.so and vndk-29/libbinder.so, which are identical except few parts, then to save space you can share the blocks between those files. This means that on the storage, the second file doesn't take as much space. The issue however is that when you want to modify vndk-28/libbinder.so, if you do nothing, it will also modify vndk-29/libbinder.so, which is never what you want. So to protect against this, kernel will refuse any write to file systems using this feature. That's why "shared_blocks" FS can't be written to, and you need "unshared_blocks" FS to write to.
 
 ## Requirements
-- A Linux pc (WSL/Debain or ubuntu based distributions/Arch based distributions etc. Termux might work too but not sure. try at your own risk)
+- A Linux pc/android phone (WSL/Debain or ubuntu based distributions/Arch based distributions etc.)
 - Downloaded GSI which is read only (yaap in this case)
 - Functioning brain (idk i dont have it but yes)
 - Basic linux skills
 
 ## Alright lets do it
 It work take long i promise (hopefully)
+
+## setup for termux users (ignore if using linux)
+- Run the below command to setup storage. grant the storage popup if shown.
+```bash
+termux-setup-storage
+```
+- Run the below commands to install prerequisites.
+```bash
+pkg update
+pkg install android-tools e2fsprogs
+```
+Now continue with the guide as usual.
+
 
 - Open a shell
 - Make a folder. Call it whatever. I'll call it Yaap-rw
