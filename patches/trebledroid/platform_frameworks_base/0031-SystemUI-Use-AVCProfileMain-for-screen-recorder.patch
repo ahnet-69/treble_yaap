@@ -1,0 +1,30 @@
+From f5be1b91d222de86986dfcf1bff690949cb00e51 Mon Sep 17 00:00:00 2001
+From: Arne Coucheron <arco68@gmail.com>
+Date: Thu, 5 Nov 2020 05:38:44 +0100
+Subject: [PATCH] SystemUI: Use AVCProfileMain for screen recorder
+
+Some devices don't support the High profile very well.
+Use Main profile, which is more compatible, so they
+can use screen recorder too.
+
+Change-Id: Iac23480e080edf4300e6f411c3394c0b41030daa
+---
+ .../com/android/systemui/screenrecord/ScreenMediaRecorder.java  | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java b/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java
+index 9a1693a8..abef2c3f 100644
+--- a/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java
++++ b/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java
+@@ -174,7 +174,7 @@ public class ScreenMediaRecorder extends MediaProjection.Callback {
+         if (!mHEVC) {
+             mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+             mMediaRecorder.setVideoEncodingProfileLevel(
+-                    MediaCodecInfo.CodecProfileLevel.AVCProfileHigh,/*actually the common used high level profile*/
++                    MediaCodecInfo.CodecProfileLevel.AVCProfileMain,/*actually the common used high level profile*/
+                     mLowQuality ? MediaCodecInfo.CodecProfileLevel.AVCLevel32/*level 3.2*/
+                     : MediaCodecInfo.CodecProfileLevel.AVCLevel42/*level 4.2*/);
+         } else {
+-- 
+2.39.2
+
