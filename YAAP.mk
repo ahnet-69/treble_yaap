@@ -9,6 +9,9 @@ TARGET_NO_KERNEL_IMAGE := true
 SELINUX_IGNORE_NEVERALLOWS := true
 TARGET_BOOT_ANIMATION_RES := 1080
 
+PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
+    ro.system.ota.json_url=https://raw.githubusercontent.com/ahnet-69/treble_yaap/13.0/ota.json
+
 TARGET_USES_PREBUILT_VENDOR_SEPOLICY := true
 TARGET_HAS_FUSEBLK_SEPOLICY_ON_VENDOR := true
 
