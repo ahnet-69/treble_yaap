@@ -1,0 +1,16 @@
+{
+  "version": "20230707",
+  "date": "temp",
+  "variants": [
+    {
+      "name": "treble_arm64_bvN",
+      "size": "908240584",
+      "url": "https://github.com/ahnet-69/treble_yaap/releases/download/20230708/YAAP-UNOFFICIAL-20230707-arm64-bvN.img.xz"
+    },
+    {
+      "name": "treble_arm64_bgN",
+      "size": "1207624400",
+      "url": "https://github.com/ahnet-69/treble_yaap/releases/download/20230708/YAAP-UNOFFICIAL-20230707-arm64-bgN.img.xz"
+    }
+  ]
+}
