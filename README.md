@@ -53,6 +53,12 @@ export CCACHE_COMPRESS=1
 export CCACHE_MAXSIZE=50G # 50 GB
 ```
 
+### Reduce file sizes by using the following flag
+```Makefile
+BOARD_EXT4_SHARE_DUP_BLOCKS := true
+```
+This Flag makes the blocks shared and makes the build read only. It ensures it fits on to maximum devices since many devices have small system partitions.
+
 ## Compilation 
 In rom folder, for building Gapps
 
