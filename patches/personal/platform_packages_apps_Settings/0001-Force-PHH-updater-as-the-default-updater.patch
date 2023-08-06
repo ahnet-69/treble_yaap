@@ -1,0 +1,31 @@
+From 120b83196769dd9326a67defbea8499d24fa6738 Mon Sep 17 00:00:00 2001
+From: ahnet-69 <syedmusicrealise@gmail.com>
+Date: Sun, 6 Aug 2023 17:29:51 +0500
+Subject: [PATCH] Force PHH updater as the default updater
+
+---
+ res/values/yaap_strings.xml | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/res/values/yaap_strings.xml b/res/values/yaap_strings.xml
+index 3c19818..a2bb569 100644
+--- a/res/values/yaap_strings.xml
++++ b/res/values/yaap_strings.xml
+@@ -58,10 +58,10 @@
+     <string name="prevent_ringing_option_normal">Normal</string>
+ 
+     <!-- OTA App -->
+-    <string name="update_settings_title">YAAP Updater</string>
+-    <string name="update_settings_summary">Check for the latest version of the rom</string>
+-    <string name="update_package" translatable="false">eu.chainfire.opendelta</string>
+-    <string name="update_activity" translatable="false">eu.chainfire.opendelta.MainActivity</string>
++    <string name="update_settings_title">PHH Updater</string>
++    <string name="update_settings_summary">Check for the latest version of the GSI</string>
++    <string name="update_package" translatable="false">me.phh.treble.app</string>
++    <string name="update_activity" translatable="false">me.phh.treble.app.UpdaterActivity</string>
+ 
+     <!-- Radio Info -->
+     <string name="radio_info_title">Radio info</string>
+-- 
+2.39.2
+
