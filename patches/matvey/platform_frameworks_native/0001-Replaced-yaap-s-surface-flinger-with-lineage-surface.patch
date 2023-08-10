@@ -1,19 +1,28 @@
-From 778edf7dcd04f070bcffec3bc20484a4af1b096e Mon Sep 17 00:00:00 2001
+From ecd2d28d06f9df34e0bd804f1ede309d46645a6b Mon Sep 17 00:00:00 2001
 From: TQMatvey <maybeetube@gmail.com>
-Date: Mon, 26 Jun 2023 15:12:34 +0500
-Subject: [PATCH] Replaced yaap's surface flinger with lineage surface flinger
+Date: Thu, 10 Aug 2023 16:50:31 +0500
+Subject: [PATCH] Replace yaap's surfaceflinger with lineage's
 
+This fixes yaap freaking out on flagship devices with many resolution options (Happens on S21U)
 ---
+ services/surfaceflinger/BufferQueueLayer.cpp  |  1 -
  services/surfaceflinger/BufferStateLayer.cpp  |  5 +-
  .../CompositionRefreshArgs.h                  |  9 +-
  .../impl/OutputCompositionState.h             |  7 +-
  .../CompositionEngine/src/Display.cpp         |  7 +-
  .../CompositionEngine/src/Output.cpp          |  4 +-
+ .../CompositionEngine/src/OutputLayer.cpp     | 24 -----
  .../CompositionEngine/tests/DisplayTest.cpp   | 14 +--
  .../CompositionEngine/tests/MockHWComposer.h  | 12 ++-
- .../surfaceflinger/DisplayHardware/HWC2.cpp   | 19 ++--
- .../DisplayHardware/HWComposer.cpp            | 28 +++---
- .../DisplayHardware/HWComposer.h              | 19 ++--
+ .../DisplayHardware/AidlComposerHal.cpp       |  7 --
+ .../DisplayHardware/AidlComposerHal.h         |  2 -
+ .../DisplayHardware/ComposerHal.h             |  3 -
+ .../surfaceflinger/DisplayHardware/HWC2.cpp   | 27 ++----
+ .../surfaceflinger/DisplayHardware/HWC2.h     |  5 -
+ .../DisplayHardware/HWComposer.cpp            | 22 +++--
+ .../DisplayHardware/HWComposer.h              | 17 ++--
+ .../DisplayHardware/HidlComposerHal.cpp       |  7 --
+ .../DisplayHardware/HidlComposerHal.h         |  2 -
  .../DisplayHardware/PowerAdvisor.cpp          |  4 +-
  .../DisplayHardware/PowerAdvisor.h            |  4 +-
  services/surfaceflinger/Layer.cpp             | 17 +---
@@ -28,8 +37,20 @@ Subject: [PATCH] Replaced yaap's surface flinger with lineage surface flinger
  services/surfaceflinger/SurfaceFlinger.h      |  9 +-
  .../surfaceflinger_displayhardware_fuzzer.cpp |  5 +-
  .../surfaceflinger/main_surfaceflinger.cpp    |  5 +
- 24 files changed, 133 insertions(+), 262 deletions(-)
+ 32 files changed, 133 insertions(+), 313 deletions(-)
 
+diff --git a/services/surfaceflinger/BufferQueueLayer.cpp b/services/surfaceflinger/BufferQueueLayer.cpp
+index 4992b83..bee4de3 100644
+--- a/services/surfaceflinger/BufferQueueLayer.cpp
++++ b/services/surfaceflinger/BufferQueueLayer.cpp
+@@ -472,7 +472,6 @@ status_t BufferQueueLayer::setDefaultBufferProperties(uint32_t w, uint32_t h, Pi
+     setDefaultBufferSize(w, h);
+     mConsumer->setDefaultBufferFormat(format);
+     mConsumer->setConsumerUsageBits(getEffectiveUsage(0));
+-    ALOGE("bufferqueuelayer -- name %s", mName.c_str());
+ 
+     return NO_ERROR;
+ }
 diff --git a/services/surfaceflinger/BufferStateLayer.cpp b/services/surfaceflinger/BufferStateLayer.cpp
 index 2e6fa60..3875f15 100644
 --- a/services/surfaceflinger/BufferStateLayer.cpp
@@ -150,6 +171,55 @@ index adeee26..1598fd1 100644
                          });
      if (expensiveRenderingExpected) {
          setExpensiveRenderingExpected(true);
+diff --git a/services/surfaceflinger/CompositionEngine/src/OutputLayer.cpp b/services/surfaceflinger/CompositionEngine/src/OutputLayer.cpp
+index 9b0a117..2129dfe 100644
+--- a/services/surfaceflinger/CompositionEngine/src/OutputLayer.cpp
++++ b/services/surfaceflinger/CompositionEngine/src/OutputLayer.cpp
+@@ -28,7 +28,6 @@
+ #include "system/graphics-base-v1.0.h"
+ 
+ #include <ui/DataspaceUtils.h>
+-#include <cutils/properties.h>
+ 
+ // TODO(b/129481165): remove the #pragma below and fix conversion issues
+ #pragma clang diagnostic push
+@@ -39,9 +38,6 @@
+ // TODO(b/129481165): remove the #pragma below and fix conversion issues
+ #pragma clang diagnostic pop // ignored "-Wconversion"
+ 
+-static bool sCheckedProps = false;
+-static bool sAsusFod = false;
+-
+ using aidl::android::hardware::graphics::composer3::Composition;
+ 
+ namespace android::compositionengine {
+@@ -430,26 +426,6 @@ void OutputLayer::writeOutputDependentGeometryStateToHWC(HWC2::Layer* hwcLayer,
+                                                      ->getHeight()));
+     }
+ 
+-    if(!sCheckedProps) {
+-        sCheckedProps = true;
+-        sAsusFod = property_get_bool("persist.sys.phh.fod.asus", false);
+-    }
+-
+-    if (strstr(getLayerFE().getDebugName(), "UdfpsControllerOverlay#") != nullptr) {
+-        if (sAsusFod) {
+-            if (auto error = hwcLayer->setLayerClass(5); error != hal::Error::NONE) {
+-                ALOGE("Failed setting Asus layer class");
+-            }
+-        }
+-    }
+-    if (strstr(getLayerFE().getDebugName(), "SurfaceView[UdfpsControllerOverlay](BLAST)#") != nullptr) {
+-        if (sAsusFod) {
+-            if (auto error = hwcLayer->setLayerClass(4); error != hal::Error::NONE) {
+-                ALOGE("Failed setting Asus layer class");
+-            }
+-        }
+-    }
+-
+     ALOGV("Writing display frame [%d, %d, %d, %d]", displayFrame.left, displayFrame.top,
+           displayFrame.right, displayFrame.bottom);
+ 
 diff --git a/services/surfaceflinger/CompositionEngine/tests/DisplayTest.cpp b/services/surfaceflinger/CompositionEngine/tests/DisplayTest.cpp
 index 5ed23ff..5369642 100644
 --- a/services/surfaceflinger/CompositionEngine/tests/DisplayTest.cpp
@@ -229,8 +299,52 @@ index 41d70d5..d7704a8 100644
      MOCK_METHOD2(setPowerMode, status_t(PhysicalDisplayId, hal::PowerMode));
      MOCK_METHOD2(setActiveConfig, status_t(HalDisplayId, size_t));
      MOCK_METHOD2(setColorTransform, status_t(HalDisplayId, const mat4&));
+diff --git a/services/surfaceflinger/DisplayHardware/AidlComposerHal.cpp b/services/surfaceflinger/DisplayHardware/AidlComposerHal.cpp
+index 922bd8c..79dcd15 100644
+--- a/services/surfaceflinger/DisplayHardware/AidlComposerHal.cpp
++++ b/services/surfaceflinger/DisplayHardware/AidlComposerHal.cpp
+@@ -1126,12 +1126,5 @@ Error AidlComposer::getPhysicalDisplayOrientation(Display displayId,
+     return Error::NONE;
+ }
+ 
+-Error AidlComposer::setLayerClass(Display display, Layer layer, uint32_t layerClass) {
+-    (void) display;
+-    (void) layer;
+-    (void) layerClass;
+-    return Error::NONE;
+-}
+-
+ } // namespace Hwc2
+ } // namespace android
+diff --git a/services/surfaceflinger/DisplayHardware/AidlComposerHal.h b/services/surfaceflinger/DisplayHardware/AidlComposerHal.h
+index 8ebca82..18d2242 100644
+--- a/services/surfaceflinger/DisplayHardware/AidlComposerHal.h
++++ b/services/surfaceflinger/DisplayHardware/AidlComposerHal.h
+@@ -227,8 +227,6 @@ public:
+     Error getPhysicalDisplayOrientation(Display displayId,
+                                         AidlTransform* outDisplayOrientation) override;
+ 
+-    // Proprietary extensions
+-    Error setLayerClass(Display display, Layer layer, uint32_t layerClass) override;
+ private:
+     // Many public functions above simply write a command into the command
+     // queue to batch the calls.  validateDisplay and presentDisplay will call
+diff --git a/services/surfaceflinger/DisplayHardware/ComposerHal.h b/services/surfaceflinger/DisplayHardware/ComposerHal.h
+index b81d01e..d266d94 100644
+--- a/services/surfaceflinger/DisplayHardware/ComposerHal.h
++++ b/services/surfaceflinger/DisplayHardware/ComposerHal.h
+@@ -281,9 +281,6 @@ public:
+     virtual Error setIdleTimerEnabled(Display displayId, std::chrono::milliseconds timeout) = 0;
+     virtual Error getPhysicalDisplayOrientation(Display displayId,
+                                                 AidlTransform* outDisplayOrientation) = 0;
+-
+-    // Proprietary extensions
+-    virtual Error setLayerClass(Display display, Layer layer, uint32_t layerClass) = 0;
+ };
+ 
+ } // namespace Hwc2
 diff --git a/services/surfaceflinger/DisplayHardware/HWC2.cpp b/services/surfaceflinger/DisplayHardware/HWC2.cpp
-index e4e16d1..82f6051 100644
+index e4e16d1..c52e96d 100644
 --- a/services/surfaceflinger/DisplayHardware/HWC2.cpp
 +++ b/services/surfaceflinger/DisplayHardware/HWC2.cpp
 @@ -826,24 +826,25 @@ Error Layer::setPerFrameMetadata(const int32_t supportedPerFrameMetadata,
@@ -268,23 +382,49 @@ index e4e16d1..82f6051 100644
  }
  
  Error Layer::setDisplayFrame(const Rect& frame)
+@@ -987,14 +988,6 @@ Error Layer::setBlockingRegion(const Region& region) {
+     return static_cast<Error>(intError);
+ }
+ 
+-Error Layer::setLayerClass(uint32_t layerClass) {
+-    if (CC_UNLIKELY(!mDisplay)) {
+-        return Error::BAD_DISPLAY;
+-    }
+-    auto intError = mComposer.setLayerClass(mDisplay->getId(), mId, layerClass);
+-    return static_cast<Error>(intError);
+-}
+-
+ } // namespace impl
+ } // namespace HWC2
+ } // namespace android
+diff --git a/services/surfaceflinger/DisplayHardware/HWC2.h b/services/surfaceflinger/DisplayHardware/HWC2.h
+index 138d144..24aef9b 100644
+--- a/services/surfaceflinger/DisplayHardware/HWC2.h
++++ b/services/surfaceflinger/DisplayHardware/HWC2.h
+@@ -333,9 +333,6 @@ public:
+     // AIDL HAL
+     [[nodiscard]] virtual hal::Error setBrightness(float brightness) = 0;
+     [[nodiscard]] virtual hal::Error setBlockingRegion(const android::Region& region) = 0;
+-
+-    // Proprietary HAL
+-    [[nodiscard]] virtual hal::Error setLayerClass(uint32_t layerClass) = 0;
+ };
+ 
+ namespace impl {
+@@ -385,8 +382,6 @@ public:
+     hal::Error setBrightness(float brightness) override;
+     hal::Error setBlockingRegion(const android::Region& region) override;
+ 
+-    // Proprietary HAL
+-    hal::Error setLayerClass(uint32_t layerClass) override;
+ private:
+     // These are references to data owned by HWC2::Device, which will outlive
+     // this HWC2::Layer, so these references are guaranteed to be valid for
 diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.cpp b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
-index 7e2f9cb..a6aee1f 100644
+index 2cf2b83..a6aee1f 100644
 --- a/services/surfaceflinger/DisplayHardware/HWComposer.cpp
 +++ b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
-@@ -375,11 +375,6 @@ void HWComposer::setVsyncEnabled(PhysicalDisplayId displayId, hal::Vsync enabled
-     }
- 
-     ATRACE_CALL();
--    if (displayData.powerMode == hal::PowerMode::DOZE && enabled == hal::Vsync::ENABLE) {
--        ALOGV("%s will not enable vsync for display %s due to power mode %s", __FUNCTION__,
--              to_string(displayId).c_str(), to_string(displayData.powerMode).c_str());
--        return;
--    }
-     auto error = displayData.hwcDisplay->setVsyncEnabled(enabled);
-     RETURN_IF_HWC_ERROR(error, displayId);
- 
-@@ -403,8 +398,8 @@ status_t HWComposer::setClientTarget(HalDisplayId displayId, uint32_t slot,
+@@ -398,8 +398,8 @@ status_t HWComposer::setClientTarget(HalDisplayId displayId, uint32_t slot,
  
  status_t HWComposer::getDeviceCompositionChanges(
          HalDisplayId displayId, bool frameUsesClientComposition,
@@ -295,7 +435,7 @@ index 7e2f9cb..a6aee1f 100644
          std::optional<android::HWComposer::DeviceRequestedChanges>* outChanges) {
      ATRACE_CALL();
  
-@@ -434,13 +429,14 @@ status_t HWComposer::getDeviceCompositionChanges(
+@@ -429,13 +429,14 @@ status_t HWComposer::getDeviceCompositionChanges(
  
          // If composer supports getting the expected present time, we can skip
          // as composer will make sure to prevent early presentation
@@ -312,7 +452,7 @@ index 7e2f9cb..a6aee1f 100644
      }();
  
      displayData.validateWasSkipped = false;
-@@ -510,8 +506,8 @@ sp<Fence> HWComposer::getLayerReleaseFence(HalDisplayId displayId, HWC2::Layer*
+@@ -505,8 +506,8 @@ sp<Fence> HWComposer::getLayerReleaseFence(HalDisplayId displayId, HWC2::Layer*
  }
  
  status_t HWComposer::presentAndGetReleaseFences(
@@ -323,7 +463,7 @@ index 7e2f9cb..a6aee1f 100644
      ATRACE_CALL();
  
      RETURN_IF_INVALID_DISPLAY(displayId, BAD_INDEX);
-@@ -520,7 +516,6 @@ status_t HWComposer::presentAndGetReleaseFences(
+@@ -515,7 +516,6 @@ status_t HWComposer::presentAndGetReleaseFences(
      auto& hwcDisplay = displayData.hwcDisplay;
  
      if (displayData.validateWasSkipped) {
@@ -331,7 +471,7 @@ index 7e2f9cb..a6aee1f 100644
          // explicitly flush all pending commands
          auto error = static_cast<hal::Error>(mComposer->executeCommands());
          RETURN_IF_HWC_ERROR_FOR("executeCommands", error, displayId, UNKNOWN_ERROR);
-@@ -528,9 +523,13 @@ status_t HWComposer::presentAndGetReleaseFences(
+@@ -523,9 +523,13 @@ status_t HWComposer::presentAndGetReleaseFences(
          return NO_ERROR;
      }
  
@@ -347,16 +487,8 @@ index 7e2f9cb..a6aee1f 100644
      }
  
      auto error = hwcDisplay->present(&displayData.lastPresentFence);
-@@ -552,7 +551,6 @@ status_t HWComposer::setPowerMode(PhysicalDisplayId displayId, hal::PowerMode mo
-         setVsyncEnabled(displayId, hal::Vsync::DISABLE);
-     }
- 
--    mDisplayData[displayId].powerMode = mode;
-     const auto& displayData = mDisplayData[displayId];
-     auto& hwcDisplay = displayData.hwcDisplay;
-     switch (mode) {
 diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.h b/services/surfaceflinger/DisplayHardware/HWComposer.h
-index 7400e4c..92a8f30 100644
+index 9158d6c..92a8f30 100644
 --- a/services/surfaceflinger/DisplayHardware/HWComposer.h
 +++ b/services/surfaceflinger/DisplayHardware/HWComposer.h
 @@ -139,16 +139,17 @@ public:
@@ -403,15 +535,37 @@ index 7400e4c..92a8f30 100644
  
      // set power mode
      status_t setPowerMode(PhysicalDisplayId, hal::PowerMode mode) override;
-@@ -466,8 +467,6 @@ private:
-         std::mutex vsyncEnabledLock;
-         hal::Vsync vsyncEnabled GUARDED_BY(vsyncEnabledLock) = hal::Vsync::DISABLE;
+diff --git a/services/surfaceflinger/DisplayHardware/HidlComposerHal.cpp b/services/surfaceflinger/DisplayHardware/HidlComposerHal.cpp
+index 12b36f3..2597ae6 100644
+--- a/services/surfaceflinger/DisplayHardware/HidlComposerHal.cpp
++++ b/services/surfaceflinger/DisplayHardware/HidlComposerHal.cpp
+@@ -1345,13 +1345,6 @@ Error HidlComposer::getPhysicalDisplayOrientation(Display, AidlTransform*) {
+                      "OptionalFeature::PhysicalDisplayOrientation is not supported on HIDL");
+ }
  
--        hal::PowerMode powerMode = hal::PowerMode::ON;
+-Error HidlComposer::setLayerClass(Display display, Layer layer, uint32_t layerClass) {
+-    mWriter.selectDisplay(display);
+-    mWriter.selectLayer(layer);
+-    mWriter.vendor800_1(layerClass);
+-    return Error::NONE;
+-}
 -
-         nsecs_t lastHwVsync = 0;
-     };
+ void HidlComposer::registerCallback(ComposerCallback& callback) {
+     const bool vsyncSwitchingSupported =
+             isSupported(Hwc2::Composer::OptionalFeature::RefreshRateSwitching);
+diff --git a/services/surfaceflinger/DisplayHardware/HidlComposerHal.h b/services/surfaceflinger/DisplayHardware/HidlComposerHal.h
+index c40986f..d0d3c2e 100644
+--- a/services/surfaceflinger/DisplayHardware/HidlComposerHal.h
++++ b/services/surfaceflinger/DisplayHardware/HidlComposerHal.h
+@@ -338,8 +338,6 @@ public:
+     Error getPhysicalDisplayOrientation(Display displayId,
+                                         AidlTransform* outDisplayOrientation) override;
  
+-    // Proprietary extensions
+-    Error setLayerClass(Display display, Layer layer, uint32_t layerClass) override;
+ private:
+     class CommandWriter : public CommandWriterBase {
+     public:
 diff --git a/services/surfaceflinger/DisplayHardware/PowerAdvisor.cpp b/services/surfaceflinger/DisplayHardware/PowerAdvisor.cpp
 index bc8a280..a0350b7 100644
 --- a/services/surfaceflinger/DisplayHardware/PowerAdvisor.cpp
@@ -1127,5 +1281,5 @@ index 883766b..ec18054 100644
      flinger->init();
  
 -- 
-2.40.1
+2.39.2
 
