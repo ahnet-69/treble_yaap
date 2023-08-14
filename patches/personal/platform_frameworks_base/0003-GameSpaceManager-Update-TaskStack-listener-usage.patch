@@ -1,0 +1,55 @@
+From f606eb670c417b09b99c784b9a13d85df20c6e8e Mon Sep 17 00:00:00 2001
+From: Nauval Rizky <enuma.alrizky@gmail.com>
+Date: Sun, 28 Aug 2022 14:58:54 +0700
+Subject: [PATCH] GameSpaceManager: Update TaskStack listener usage
+
+Reference: https://android.googlesource.com/platform/frameworks/base.git/+/eabb9a88fe8f1fd5a1b9684f702cbe8b73efd959
+---
+ .../systemui/statusbar/policy/GameSpaceManager.kt      | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/GameSpaceManager.kt b/packages/SystemUI/src/com/android/systemui/statusbar/policy/GameSpaceManager.kt
+index aa09e752..fd86633b 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/GameSpaceManager.kt
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/GameSpaceManager.kt
+@@ -30,8 +30,8 @@ import android.os.RemoteException
+ import android.os.UserHandle
+ import android.provider.Settings
+ import com.android.systemui.dagger.SysUISingleton
+-import com.android.systemui.shared.system.ActivityManagerWrapper
+ import com.android.systemui.shared.system.TaskStackChangeListener
++import com.android.systemui.shared.system.TaskStackChangeListeners
+ 
+ import java.util.Arrays
+ import javax.inject.Inject
+@@ -43,12 +43,11 @@ class GameSpaceManager @Inject constructor(
+ ) {
+     private val handler by lazy { GameSpaceHandler(Looper.getMainLooper()) }
+     private val taskManager by lazy { ActivityTaskManager.getService() }
+-    private val activityManager by lazy { ActivityManagerWrapper.getInstance() }
+ 
+     private var activeGame: String? = null
+     private var isRegistered = false
+ 
+-    private val mTaskStackChangeListener = object : TaskStackChangeListener() {
++    private val taskStackChangeListener = object : TaskStackChangeListener {
+         override fun onTaskStackChanged() {
+             handler.sendEmptyMessage(MSG_UPDATE_FOREGROUND_APP)
+         }
+@@ -109,10 +108,11 @@ class GameSpaceManager @Inject constructor(
+     }
+ 
+     fun observe() {
++        val taskStackChangeListeners = TaskStackChangeListeners.getInstance();
+         if (isRegistered) {
+-            activityManager.unregisterTaskStackListener(mTaskStackChangeListener)
++            taskStackChangeListeners.unregisterTaskStackListener(taskStackChangeListener)
+         }
+-        activityManager.registerTaskStackListener(mTaskStackChangeListener)
++        taskStackChangeListeners.registerTaskStackListener(taskStackChangeListener)
+         isRegistered = true;
+         handler.sendEmptyMessage(MSG_UPDATE_FOREGROUND_APP)
+         context.registerReceiver(interactivityReceiver, IntentFilter().apply {
+-- 
+2.39.2
+

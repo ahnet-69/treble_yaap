@@ -1,0 +1,70 @@
+From 3c941304266692e269429395c0577799d807452d Mon Sep 17 00:00:00 2001
+From: Genkzsz11 <genkzsz11@gmail.com>
+Date: Sun, 28 Aug 2022 15:57:28 +0700
+Subject: [PATCH] SystemUI: Update gamespace for A13
+
+---
+ .../android/systemui/statusbar/phone/CentralSurfaces.java    | 3 +++
+ .../systemui/statusbar/phone/CentralSurfacesImpl.java        | 1 +
+ .../phone/StatusBarNotificationActivityStarter.java          | 5 +++++
+ 3 files changed, 9 insertions(+)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/CentralSurfaces.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/CentralSurfaces.java
+index 17e1bcee..317a8fbf 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/CentralSurfaces.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/CentralSurfaces.java
+@@ -53,6 +53,7 @@ import com.android.systemui.shade.NotificationShadeWindowView;
+ import com.android.systemui.shade.NotificationShadeWindowViewController;
+ import com.android.systemui.statusbar.LightRevealScrim;
+ import com.android.systemui.statusbar.NotificationPresenter;
++import com.android.systemui.statusbar.policy.GameSpaceManager;
+ import com.android.systemui.util.Compile;
+ 
+ import java.io.PrintWriter;
+@@ -537,6 +538,8 @@ public interface CentralSurfaces extends Dumpable, ActivityStarter, LifecycleOwn
+ 
+     void extendDozePulse();
+ 
++    GameSpaceManager getGameSpaceManager();
++
+     boolean shouldDelayWakeUpAnimation();
+ 
+     void toggleCameraFlash();
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/CentralSurfacesImpl.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/CentralSurfacesImpl.java
+index 78621724..a4141c9f 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/CentralSurfacesImpl.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/CentralSurfacesImpl.java
+@@ -4248,6 +4248,7 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces {
+         return mStatusBarKeyguardViewManager.isSecure();
+     }
+ 
++    @Override
+     public GameSpaceManager getGameSpaceManager() {
+         return mGameSpaceManager;
+     }
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarNotificationActivityStarter.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarNotificationActivityStarter.java
+index 189f2e30..8180c135 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarNotificationActivityStarter.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarNotificationActivityStarter.java
+@@ -72,6 +72,7 @@ import com.android.systemui.statusbar.notification.row.ExpandableNotificationRow
+ import com.android.systemui.statusbar.notification.row.ExpandableNotificationRowDragController;
+ import com.android.systemui.statusbar.notification.row.OnUserInteractionCallback;
+ import com.android.systemui.statusbar.phone.dagger.CentralSurfacesComponent;
++import com.android.systemui.statusbar.policy.GameSpaceManager;
+ import com.android.systemui.statusbar.policy.HeadsUpUtil;
+ import com.android.systemui.statusbar.policy.KeyguardStateController;
+ import com.android.systemui.wmshell.BubblesManager;
+@@ -556,6 +557,10 @@ class StatusBarNotificationActivityStarter implements NotificationActivityStarte
+ 
+     @VisibleForTesting
+     void launchFullScreenIntent(NotificationEntry entry) {
++        GameSpaceManager gameSpace = mCentralSurfaces.getGameSpaceManager();
++        if (gameSpace != null && gameSpace.shouldSuppressFullScreenIntent()) {
++            return;
++        }
+         // Skip if device is in VR mode.
+         if (mPresenter.isDeviceInVrMode()) {
+             mLogger.logFullScreenIntentSuppressedByVR(entry);
+-- 
+2.39.2
+

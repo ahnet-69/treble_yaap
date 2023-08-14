@@ -1,0 +1,42 @@
+From 05d51198c37079819e4d912b54c9f1137e219a5f Mon Sep 17 00:00:00 2001
+From: Nauval Rizky <enuma.alrizky@gmail.com>
+Date: Mon, 29 Aug 2022 00:52:47 +0700
+Subject: [PATCH] GameSpaceManager: restrict broadcast to MANAGE_GAME_MODE
+ holders only
+
+---
+ packages/SystemUI/AndroidManifest.xml                          | 3 +++
+ .../com/android/systemui/statusbar/policy/GameSpaceManager.kt  | 3 ++-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/AndroidManifest.xml b/packages/SystemUI/AndroidManifest.xml
+index 603147b1..04ddade9 100644
+--- a/packages/SystemUI/AndroidManifest.xml
++++ b/packages/SystemUI/AndroidManifest.xml
+@@ -341,6 +341,9 @@
+ 
+     <uses-permission android:name="android.permission.SET_UNRESTRICTED_KEEP_CLEAR_AREAS" />
+ 
++    <!-- To broadcast status of the GameSpaceManager -->
++    <uses-permission android:name="android.permission.MANAGE_GAME_MODE" />
++
+     <protected-broadcast android:name="com.android.settingslib.action.REGISTER_SLICE_RECEIVER" />
+     <protected-broadcast android:name="com.android.settingslib.action.UNREGISTER_SLICE_RECEIVER" />
+     <protected-broadcast android:name="com.android.settings.flashlight.action.FLASHLIGHT_CHANGED" />
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/GameSpaceManager.kt b/packages/SystemUI/src/com/android/systemui/statusbar/policy/GameSpaceManager.kt
+index fd86633b..a518d6c4 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/GameSpaceManager.kt
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/GameSpaceManager.kt
+@@ -103,7 +103,8 @@ class GameSpaceManager @Inject constructor(
+             addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING
+                 or Intent.FLAG_RECEIVER_FOREGROUND
+                 or Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND)
+-            context.sendBroadcastAsUser(this, UserHandle.SYSTEM)
++            context.sendBroadcastAsUser(this, UserHandle.SYSTEM,
++                android.Manifest.permission.MANAGE_GAME_MODE)
+         }
+     }
+ 
+-- 
+2.39.2
+
