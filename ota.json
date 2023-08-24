@@ -1,16 +1,16 @@
 {
-  "version": "20230821",
-  "date": "1692011559",
+  "version": "20230824",
+  "date": "1692611178",
   "variants": [
     {
       "name": "treble_arm64_bvN",
-      "size": "869815528",
-      "url": "https://github.com/ahnet-69/treble_yaap/releases/download/20230821/YAAP-UNOFFICIAL-20230821-arm64-bvN.img.xz"
+      "size": "866976284",
+      "url": "https://github.com/ahnet-69/treble_yaap/releases/download/20230824/YAAP-UNOFFICIAL-20230824-arm64-bvN.img.xz"
     },
     {
       "name": "treble_arm64_bgN",
-      "size": "1273020540",
-      "url": "https://github.com/ahnet-69/treble_yaap/releases/download/20230821/YAAP-UNOFFICIAL-20230821-arm64-bgN.img.xz"
+      "size": "1272293580",
+      "url": "https://github.com/ahnet-69/treble_yaap/releases/download/20230824/YAAP-UNOFFICIAL-20230824-arm64-bgN.img.xz"
     }
   ]
 }
