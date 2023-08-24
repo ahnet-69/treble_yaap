@@ -1,0 +1,22 @@
+From c14c7365b459f66216cf51f7ca5860b9eeb169bd Mon Sep 17 00:00:00 2001
+From: ahnet-69 <syedmusicrealise@gmail.com>
+Date: Thu, 24 Aug 2023 20:48:45 +0500
+Subject: [PATCH] Make builds Read Only
+
+---
+ board-base.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/board-base.mk b/board-base.mk
+index c38e385..97a4d02 100644
+--- a/board-base.mk
++++ b/board-base.mk
+@@ -11,3 +11,5 @@ BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES := true
+ BUILD_BROKEN_DUP_RULES := true
+ 
+ BOARD_ROOT_EXTRA_SYMLINKS := $(filter-out $(BOARD_ROOT_EXTRA_SYMLINKS),/mnt/vendor/persist:/persist)
++
++BOARD_EXT4_SHARE_DUP_BLOCKS := true
+-- 
+2.39.2
+
