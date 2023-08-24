@@ -1,54 +1,52 @@
-From b16eb046ff8f5626d32342d66707b87f2cb80e6b Mon Sep 17 00:00:00 2001
+From 6e803c1d8943f33ce3a5dd76bffcede846c6cb27 Mon Sep 17 00:00:00 2001
 From: Nauval Rizky <enuma.alrizky@gmail.com>
-Date: Sun, 28 Aug 2022 11:28:10 +0000
+Date: Thu, 24 Aug 2023 21:38:20 +0500
 Subject: [PATCH] Settings: Add Game Space support
 
-Co-authored-by: alanndz <alanndz7@gmail.com>
 ---
- res/values/strings.xml                        |  5 ++
- res/xml/apps.xml                              |  8 +++
- .../applications/GameSpaceController.java     | 67 +++++++++++++++++++
- 3 files changed, 80 insertions(+)
- create mode 100644 src/com/android/settings/applications/GameSpaceController.java
+ res/values/yaap_strings.xml                   |  4 ++
+ res/xml/yaap_settings_misc.xml                |  8 +++
+ .../fragments/GameSpaceController.java        | 67 +++++++++++++++++++
+ 3 files changed, 79 insertions(+)
+ create mode 100644 src/com/yasp/settings/fragments/GameSpaceController.java
 
-diff --git a/res/values/strings.xml b/res/values/strings.xml
-index 063cb67..7eae1ec 100644
---- a/res/values/strings.xml
-+++ b/res/values/strings.xml
-@@ -14567,4 +14567,9 @@
-     <string name="bt_le_audio_scan_qr_code_scanner">To start listening, center the QR code below</string>
-     <!-- [CHAR LIMIT=NONE] Hint for QR code process failure -->
-     <string name="bt_le_audio_qr_code_is_not_valid_format">QR code isn\u0027t a valid format</string>
-+
+diff --git a/res/values/yaap_strings.xml b/res/values/yaap_strings.xml
+index fd1369f..62af6a1 100644
+--- a/res/values/yaap_strings.xml
++++ b/res/values/yaap_strings.xml
+@@ -303,4 +303,8 @@
+     <string name="lockscreen_shortcut_enforce_title">Single shortcut</string>
+     <string name="lockscreen_shortcut_enforce_summary">Enforce chosen shortcut to be the only existing priority\nWill show nothing until the specific chosen shortcut is available</string>
+ 
 +    <!-- Game Space -->
 +    <string name="game_space_title">Game Space</string>
 +    <string name="game_space_summary">Enhance your gaming experience</string>
 +
  </resources>
-diff --git a/res/xml/apps.xml b/res/xml/apps.xml
-index 4dc7c4d..cf20f98 100644
---- a/res/xml/apps.xml
-+++ b/res/xml/apps.xml
-@@ -62,6 +62,14 @@
-         <intent android:action="android.settings.MANAGE_DEFAULT_APPS_SETTINGS"/>
-     </Preference>
+diff --git a/res/xml/yaap_settings_misc.xml b/res/xml/yaap_settings_misc.xml
+index f1edc28..6cf9460 100644
+--- a/res/xml/yaap_settings_misc.xml
++++ b/res/xml/yaap_settings_misc.xml
+@@ -41,6 +41,14 @@
+         android:summary="@string/monet_settings_summary"
+         android:fragment="com.yasp.settings.fragments.MonetSettings" />
  
++    <!-- GameSpace -->
 +    <Preference
 +        android:key="game_settings"
 +        android:title="@string/game_space_title"
 +        android:summary="@string/game_space_summary"
-+        android:order="-995"
-+        settings:controller="com.android.settings.applications.GameSpaceController">
++        settings:controller="com.yasp.settings.fragments.GameSpaceController">
 +    </Preference>
 +
-     <PreferenceCategory
-         android:key="dashboard_tile_placeholder"
-         android:order="10"/>
-diff --git a/src/com/android/settings/applications/GameSpaceController.java b/src/com/android/settings/applications/GameSpaceController.java
+     <!-- SystemUI tuner -->
+     <Preference
+         android:key="ui_tuner"
+diff --git a/src/com/yasp/settings/fragments/GameSpaceController.java b/src/com/yasp/settings/fragments/GameSpaceController.java
 new file mode 100644
-index 0000000..ca442f4
+index 0000000..c8e1d89
 --- /dev/null
-+++ b/src/com/android/settings/applications/GameSpaceController.java
++++ b/src/com/yasp/settings/fragments/GameSpaceController.java
 @@ -0,0 +1,67 @@
 +/*
 + * Copyright (C) 2021 The Android Open Source Project
@@ -67,7 +65,7 @@ index 0000000..ca442f4
 + * limitations under the License.
 + */
 +
-+package com.android.settings.applications;
++package com.yasp.settings.fragments;
 +
 +import android.content.Context;
 +import android.content.pm.PackageManager;
@@ -109,7 +107,7 @@ index 0000000..ca442f4
 +    public boolean handlePreferenceTreeClick(Preference preference) {
 +        if (!TextUtils.equals(preference.getKey(), getPreferenceKey())) {
 +            return false;
-+        }
++       }
 +
 +        Intent intent = settingsIntent();
 +        intent.putExtra("referer", this.getClass().getCanonicalName());
