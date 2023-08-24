@@ -1,4 +1,4 @@
-From 8febcf734fb238bdf130f0050a003bd9871fd405 Mon Sep 17 00:00:00 2001
+From 1a926b6ee9c32adf4e25bd59858ed5aff72f8c8d Mon Sep 17 00:00:00 2001
 From: cjybyjk <cjybyjk@zjnu.edu.cn>
 Date: Wed, 7 Jul 2021 22:07:55 +0800
 Subject: [PATCH] SystemUI: Export RecordingService for External Usage
@@ -130,7 +130,7 @@ index 8c3ee3e4..344f5aee 100644
                  break;
 +            case ACTION_SHOW_DIALOG:
 +                if (mController != null) {
-+                    mController.createScreenRecordDialog(this, null).show();
++                    mController.createScreenRecordDialog(this, null, null, null, null).show();
 +                }
 +                break;
              case ACTION_DELETE:
