@@ -1,4 +1,4 @@
-From 6e803c1d8943f33ce3a5dd76bffcede846c6cb27 Mon Sep 17 00:00:00 2001
+From e3c4a88a6813d1a3e42262574785cb29f0902144 Mon Sep 17 00:00:00 2001
 From: Nauval Rizky <enuma.alrizky@gmail.com>
 Date: Thu, 24 Aug 2023 21:38:20 +0500
 Subject: [PATCH] Settings: Add Game Space support
@@ -11,10 +11,10 @@ Subject: [PATCH] Settings: Add Game Space support
  create mode 100644 src/com/yasp/settings/fragments/GameSpaceController.java
 
 diff --git a/res/values/yaap_strings.xml b/res/values/yaap_strings.xml
-index fd1369f..62af6a1 100644
+index 7f83c87..87cb8f5 100644
 --- a/res/values/yaap_strings.xml
 +++ b/res/values/yaap_strings.xml
-@@ -303,4 +303,8 @@
+@@ -304,6 +304,10 @@
      <string name="lockscreen_shortcut_enforce_title">Single shortcut</string>
      <string name="lockscreen_shortcut_enforce_summary">Enforce chosen shortcut to be the only existing priority\nWill show nothing until the specific chosen shortcut is available</string>
  
@@ -22,9 +22,11 @@ index fd1369f..62af6a1 100644
 +    <string name="game_space_title">Game Space</string>
 +    <string name="game_space_summary">Enhance your gaming experience</string>
 +
- </resources>
+     <!-- Backup Transport selector -->
+     <string name="transport_selector_title">Backup Transport</string>
+ 
 diff --git a/res/xml/yaap_settings_misc.xml b/res/xml/yaap_settings_misc.xml
-index f1edc28..6cf9460 100644
+index 7e6c726..f9e07ed 100644
 --- a/res/xml/yaap_settings_misc.xml
 +++ b/res/xml/yaap_settings_misc.xml
 @@ -41,6 +41,14 @@
@@ -39,9 +41,9 @@ index f1edc28..6cf9460 100644
 +        settings:controller="com.yasp.settings.fragments.GameSpaceController">
 +    </Preference>
 +
-     <!-- SystemUI tuner -->
-     <Preference
-         android:key="ui_tuner"
+     <!-- Backup Transport selector -->
+     <ListPreference
+         android:key="transport_selector"
 diff --git a/src/com/yasp/settings/fragments/GameSpaceController.java b/src/com/yasp/settings/fragments/GameSpaceController.java
 new file mode 100644
 index 0000000..c8e1d89
