@@ -16,13 +16,13 @@ cd YAAP
 
 ## Initalise the Treble YAAP repo
 ```bash
-repo init -u https://github.com/yaap/manifest.git -b thirteen
+repo init -u https://github.com/yaap/manifest.git -b fourteen
 ```
 
 ## Clone the Manifest
 This adds necessary dependencies for the YAAP GSI.
 ```bash
-git clone https://github.com/ahnet-69/treble_manifest.git -b yaap-13 .repo/local_manifests
+git clone https://github.com/ahnet-69/treble_manifest.git -b yaap-14 .repo/local_manifests
 ```
 
 ## Sync the repository
