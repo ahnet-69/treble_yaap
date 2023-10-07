@@ -1,0 +1,35 @@
+From b9e1e7c6a8504e565796d9ed7dd94b027343dac0 Mon Sep 17 00:00:00 2001
+From: Pierre-Hugues Husson <phh@phh.me>
+Date: Wed, 26 Oct 2022 17:59:11 -0400
+Subject: [PATCH] Fix support for devices without cgroupv2 support
+
+This is technically a revert of 1bd1746447.
+The warning inside the commit doesn't really apply to us, because the
+devices without cgroupv2 simply won't freeze processes at all
+(which is in itself an issue, but a different one)
+---
+ init/service.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/init/service.cpp b/init/service.cpp
+index 7c8962b..d41f523 100644
+--- a/init/service.cpp
++++ b/init/service.cpp
+@@ -668,11 +668,14 @@ Result<void> Service::Start() {
+                          limit_percent_ != -1 || !limit_property_.empty();
+         errno = -createProcessGroup(proc_attr_.uid, pid_, use_memcg);
+         if (errno != 0) {
++            PLOG(ERROR) << "createProcessGroup(" << proc_attr_.uid << ", " << pid_ <<  ") failed for service '" << name_ << "'";
++#if 0
+             if (char byte = 0; write((*pipefd)[1], &byte, 1) < 0) {
+                 return ErrnoError() << "sending notification failed";
+             }
+             return Error() << "createProcessGroup(" << proc_attr_.uid << ", " << pid_
+                            << ") failed for service '" << name_ << "'";
++#endif
+         }
+ 
+         // When the blkio controller is mounted in the v1 hierarchy, NormalIoPriority is
+-- 
+2.34.1
+

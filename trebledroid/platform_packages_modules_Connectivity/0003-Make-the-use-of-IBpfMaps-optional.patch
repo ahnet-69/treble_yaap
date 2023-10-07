@@ -1,0 +1,69 @@
+From 64a912724617d9340384794050508391d88ff97c Mon Sep 17 00:00:00 2001
+From: Pierre-Hugues Husson <phh@phh.me>
+Date: Fri, 6 Oct 2023 09:27:33 -0400
+Subject: [PATCH] Make the use of IBpfMaps optional
+
+---
+ .../server/net/NetworkStatsService.java       | 19 +++--
+ .../src/com/android/server/BpfNetMaps.java    |  7 +-
+ 2 files changed, 95 insertions(+), 6 deletions(-)
+ create mode 100644 4db0a4f57fa8369814156eb5a1c00bf4e73c7f2e.patch
+
+diff --git a/service-t/src/com/android/server/net/NetworkStatsService.java b/service-t/src/com/android/server/net/NetworkStatsService.java
+index d45e8fa..1fd47cb 100644
+--- a/service-t/src/com/android/server/net/NetworkStatsService.java
++++ b/service-t/src/com/android/server/net/NetworkStatsService.java
+@@ -397,11 +397,11 @@ public class NetworkStatsService extends INetworkStatsService.Stub {
+      * mActiveUidCounterSet to avoid accessing kernel too frequently.
+      */
+     private SparseIntArray mActiveUidCounterSet = new SparseIntArray();
+-    private final IBpfMap<U32, U8> mUidCounterSetMap;
+-    private final IBpfMap<CookieTagMapKey, CookieTagMapValue> mCookieTagMap;
+-    private final IBpfMap<StatsMapKey, StatsMapValue> mStatsMapA;
+-    private final IBpfMap<StatsMapKey, StatsMapValue> mStatsMapB;
+-    private final IBpfMap<UidStatsMapKey, StatsMapValue> mAppUidStatsMap;
++    private IBpfMap<U32, U8> mUidCounterSetMap = null;
++    private IBpfMap<CookieTagMapKey, CookieTagMapValue> mCookieTagMap= null;
++    private IBpfMap<StatsMapKey, StatsMapValue> mStatsMapA= null;
++    private IBpfMap<StatsMapKey, StatsMapValue> mStatsMapB= null;
++    private IBpfMap<UidStatsMapKey, StatsMapValue> mAppUidStatsMap= null;
+ 
+     /** Data layer operation counters for splicing into other structures. */
+     private NetworkStats mUidOperations = new NetworkStats(0L, 10);
+@@ -578,6 +578,15 @@ public class NetworkStatsService extends INetworkStatsService.Stub {
+         mStatsMapA = mDeps.getStatsMapA();
+         mStatsMapB = mDeps.getStatsMapB();
+         mAppUidStatsMap = mDeps.getAppUidStatsMap();
++	try {
++        mUidCounterSetMap = mDeps.getUidCounterSetMap();
++        mCookieTagMap = mDeps.getCookieTagMap();
++        mStatsMapA = mDeps.getStatsMapA();
++        mStatsMapB = mDeps.getStatsMapB();
++        mAppUidStatsMap = mDeps.getAppUidStatsMap();
++        } catch(Throwable t) {
++            android.util.Log.e("PHH", "Failed creating bpf maps", t);
++        }
+     }
+ 
+     /**
+diff --git a/service/src/com/android/server/BpfNetMaps.java b/service/src/com/android/server/BpfNetMaps.java
+index c006bc6..c73d236 100644
+--- a/service/src/com/android/server/BpfNetMaps.java
++++ b/service/src/com/android/server/BpfNetMaps.java
+@@ -62,7 +62,12 @@ public class BpfNetMaps {
+     }
+ 
+     public BpfNetMaps(INetd netd) {
+-        ensureInitialized();
++            try {
++                ensureInitialized();
++            } catch(Throwable t) {
++                android.util.Log.e("PHH", "Failed initialization BpfMaps, doing without it", t);
++                sEnableJavaBpfMap = false;
++            }
+         mNetd = netd;
+     }
+ 
+-- 
+2.34.1
+
